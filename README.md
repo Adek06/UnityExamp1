@@ -199,6 +199,8 @@ count++;
 
 到这里，我们就实现了显示分数的能力了。
 
+![第一款3d游戏](./Pic/2017-08-07 (1).png)
+
 
 
 ## 2017-8-02
@@ -239,6 +241,7 @@ count++;
 
 为此，创建一个新的GameObject[]数组，用以存放多个地图块。之后只要规划一下放置的位置就对了。简单的演示一下，在2d的地图上，如何绘制一个外围墙及地面。
 
+![实例图](./Pic/拾荒者-游戏界面.png)
 
 首先是外围墙。
 
@@ -374,6 +377,8 @@ private void decorateHinder(int mix,int max,GameObject[] array){
 
 最后结果是这个样子。
 
+![布置障碍和食物](./Pic/2017-08-04.png)
+
 
 
 ## 2017-8-05
@@ -469,9 +474,7 @@ RaycastHit2D hit = Physics2D.Linecast(targetPos,targetPos+new Vector2(h,v));
 GetComponent<BoxCollider2D>().enable = true;
 ```
 
-????这一段我并不是很明白。????
-
-简单的解释就是，发出一条射线，检测前方是否有东西。
+hit发出的射线，检测的是前方是否有盒子的边。可发出射线的物体本身，也是一个盒子。所以要先将自己的盒子关闭，再发出射线，这样就能检测到前方的物体了。
 
 ```c#
 if(hit.transform==num){
@@ -514,3 +517,35 @@ hit.collider.SendMessage("Method");
 ```
 
 这个是配合上文的碰撞检测一起使用。这个api是发送信号，告诉引擎执行Method这个函数。
+
+
+
+## 2017-8-08
+
+### 敌人如何追踪角色
+
+大体思路就是，判断自己和角色的具体位置差。如果y轴相差得大，就往y轴走，反之，往x轴走。
+
+放一下简单的实例代码。新建一个Enemy.cs
+
+```c#
+private Vector2 targetPos;
+private transform player;
+...
+void Start(){
+  targetPos = transform.position;
+}
+void PreMove(){
+  Vector2 offset = player.position - transform.position;
+  if(Mathf.Abs(offset.y)>Mathf.Abs(offset.x)){
+    if(offset.y>0){
+      ...
+    }else if(offset.y<0){
+      ...
+    }
+  }else{
+    ...
+  }
+}
+```
+
