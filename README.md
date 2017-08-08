@@ -199,8 +199,6 @@ count++;
 
 到这里，我们就实现了显示分数的能力了。
 
-![第一款3d游戏](C:\Users\Adek06\OneDrive\图片\屏幕快照\2017-08-07 (1).png)
-
 
 
 ## 2017-8-02
@@ -241,7 +239,6 @@ count++;
 
 为此，创建一个新的GameObject[]数组，用以存放多个地图块。之后只要规划一下放置的位置就对了。简单的演示一下，在2d的地图上，如何绘制一个外围墙及地面。
 
-![实例图](C:\Users\Adek06\Videos\Unity 120 Unity 2D游戏开发案例 - 2DRoguelike拾荒者\素材\拾荒者-游戏界面.png)
 
 首先是外围墙。
 
@@ -376,8 +373,6 @@ private void decorateHinder(int mix,int max,GameObject[] array){
 最后，在引擎上，将食物、障碍分到同一层就可以了。
 
 最后结果是这个样子。
-
-![布置障碍和食物](C:\Users\Adek06\OneDrive\图片\屏幕快照\2017-08-04.png)
 
 
 
