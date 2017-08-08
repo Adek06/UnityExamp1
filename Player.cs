@@ -52,17 +52,30 @@ public class Player : MonoBehaviour
         if (hit.transform == null)
         {
             targetPos += new Vector2(h, v);
+        }
+        else {
+            switch (hit.collider.tag) {
+                case "Wall" :
+                    GetComponent<Animator>().SetTrigger("Attack");
+                    hit.collider.SendMessage("TakeDamage");
+                    break;
+                case "OutWall":
+                    break;
+                case "Food":
+                    EatFood(10,new Vector2(h,v),hit);
+                    break;
+                case "Soda":
+                    EatFood(20, new Vector2(h, v), hit);
+                    break;
+            }
             restTimer = 0;
         }
-        else if (hit.collider.tag == "Wall")
-        {
-            GetComponent<Animator>().SetTrigger("Attack");
-            hit.collider.SendMessage("TakeDamage");
-            restTimer = 0;
-        }
-        else if (hit.collider.tag == "OutWall")
-        {
-            restTimer = 0;
-        }
+      
+    }
+
+    private void EatFood(int count,Vector2 Pos,RaycastHit2D hit) {
+        GameManager.Instance.AddFood(20);
+        targetPos += Pos;
+        Destroy(hit.transform.gameObject);
     }
 }
