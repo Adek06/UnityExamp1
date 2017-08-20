@@ -202,6 +202,7 @@ count++;
 ![第一款3d游戏](./Pic/2017-08-07(1).png)
 
 
+
 ## 2017-8-02
 
 ### 如何创建人物动画
@@ -548,3 +549,142 @@ void PreMove(){
 }
 ```
 
+---
+
+## 2017-8-16
+
+### 保留BGM（如何在切换场景时，不摧毁对象）
+
+这几天有点偷懒，跑去玩《ever17》，再回来制作游戏时，发现好多东西都想通了。果然还是得多推（纸片）妹子才行啊！
+
+好了。先说说场景切换。
+
+直接使用
+
+```c#
+SceneManager.LoadScene("name");
+```
+
+就可以切换场景。但是切换场景的时候，会把原场景的所有对象全部摧毁，包括一切数据。为了保留血量等数据，还要有东西来保存这些。
+
+```c#
+PlayerPres.SetInt("key",value);
+```
+
+key是指需要保存到内存里的数据，value储存值。如果这个值是float型，就SetFloat,string的同理。在下一个场景的时候，读取回来就可以了。
+
+```c#
+PlayerPres.GetInt("key");
+```
+
+理解完了这个。再看看，关于BGM的事情。
+
+首先BGM不是值，是对象。在切换场景的时候会被摧毁，而且还不能通过上一种方式储存。于是，我尝试用一个API来搞定。
+
+```c#
+DontDestoryOnLoad(gameObject);
+```
+
+这个API可以防止对象不摧毁。可不知道为什么，当我切换场景的时候，这个BGM对象没摧毁，但同时，又产生了一个新的BGM对象。有点糟糕。仔细想想，每次地图对象产生的时候，一定会产生BGM对象，而前一个没摧毁，就会同时出现两个BGM对象。
+
+所以，只要做个判定，看是否存在对象就好了。
+
+```c#
+private static BGM _instance;
+public static BGM Instance {
+    get {
+      	if (_instance == null){
+            _instance = FindObjectOfType(BGM);
+          	DontDestroyOnLoad(_instance.gameObject);
+        }
+        return _instance;
+    }
+}
+
+void Awake(){
+    if (_instance == null){
+        _instance = this;
+      	DontDestroyOnLoad(this);
+    }else if(this != _instance){
+        Destroy(gameObject);
+    }
+}
+```
+
+虽然不是很懂，大概的意思怕是，如果存在BGM对象，则不在建立，否则建立的意思。
+
+到这里，已经可以保持BGM持续播放了。剩下的，明天增加一点特效和天数的显示，这个项目就正式结束了。
+
+---
+
+## 2017-8-18
+
+### 制作一个摇杆
+
+摇杆这个问题挺困扰我的，原先的想法是，做四个按键，每个案件返回一个值-1或1。结果按键监听不支持返回值。于是只好作罢。
+
+先是在国内网站找了一圈，发现他们的想法太繁杂，一个小功能如果要那么多代码来实现，宁可不要。跑到youtube上，看了几个教程，发现台湾的一个小哥讲的还不错，下面就简单的描述一下实现的想法。
+
+首先，在画面上，要有一个托盘和一个摇杆。在托盘上建立脚本，这里不在摇杆上建立，大概就是不好触控吧。脚本里，先建立四个变量。两个RectTransform变量，用来记录摇杆和托盘的位置，一个bool值，用来检测手指是否在摇杆上。一个是角色的位置。
+
+之后先建立三个函数，StartDrag(),Drag(),StopDrage()，这三个函数分别实现手指放上去，拖动摇杆，手指离开。之后用Update()函数不停的实现Drag()函数。
+
+一个函数一个函数的看。
+
+在StartDrag()，我们让先前的那个bool值为真，表示手指已经在托盘上了，可以开始拖动了。这个函数结束。
+
+在StopDrag()，我们让bool值为假，表示手指离开了。同时，让摇杆的位置归零回到初始位置。
+
+在Drag()，先判断bool值，为假则直接返回。否则，先检测鼠标的位置，用input.mousePosition,实现单点触控，赋给一个Vector2变量，之后用这个变量减去摇杆原始位置，得到真正的位移。为了限制摇杆的移动，用Vector2.ClampMagnitude(newPos,70)，让它的位置始终在托盘上。最后显示摇杆的位置，handle.anchoredPosition = pos。在最后，为了控制人物移动，新建一个Vector2变量，接收鼠标向量乘以速度和帧变化，将结果给角色的位置就好了。
+
+代码部分结束了。可到这里，我们并没有实现，调用StartDrag()和StopDrag()两个函数。我们希望手指点击执行StartDrag()，手指移开实现StopDrag()。还有，我们没有指定谁是托盘,谁是摇杆。这些还要回到引擎上操作。
+
+在摇杆上建立Even Trigger，在Even Trigger上建立两个事件，一个是PointDown，一个PointUp，分别对应StartDrag()和StopDrag()。同时，在托盘的属性里，指定托盘，摇杆，人物。
+
+到这里就实现了一个小的摇杆。
+
+献上完整代码
+
+```c#
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class Analogy : MonoBehaviour {
+    public RectTransform handle;
+    public RectTransform rect;
+    public Transform player;
+    private bool dragging = false;
+	private void Update()
+    {
+        Drage();
+    }
+
+    public void StartDrag() {
+        dragging = true;
+    }    
+	public void Drage() {
+        if (!dragging) { return; }
+        Vector2 mPos = Input.mousePosition;
+        Vector2 newPos = mPos - rect.anchoredPosition;
+        Vector2 pos = Vector2.ClampMagnitude(newPos,70);
+        handle.anchoredPosition = pos;
+
+        Vector2 dir = pos.normalized* 60 * Time.deltaTime;
+        Player.Transfor(dir);
+    }
+
+   public void StopDrage() {
+        dragging = false;
+        handle.anchoredPosition = Vector2.zero;
+    }
+}
+```
+
+
+
+---
+
+第二个项目，Rogulike类型游戏到这里结束了。总的来说，还是有学到不少东西。地图的随机生成，元素数组，位置列表。还有类与类之间的调用，动画状态机的使用，人物行走，获取组件什么的。
+
+感觉还是学的好少。。。。。。
