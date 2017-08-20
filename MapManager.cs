@@ -14,10 +14,12 @@ public class MapManager : MonoBehaviour {
     private GameManager gameManager;
     public int rows;
     public int cols;
+    public int level;
 
     private List<Vector2> positionList = new List<Vector2>();
 
     void Awake() {
+        level = PlayerPrefs.GetInt("level");
         gameManager =this.GetComponent<GameManager>();
         InitMap();
 	}
@@ -35,11 +37,11 @@ public class MapManager : MonoBehaviour {
             {
                 if (x == 0 || y == 0 || x == rows - 1 || y == cols - 1)
                 {
-                    creatMap(outWallArray,new Vector2(x,y));
+                    creatMap(new Vector2(x,y),outWallArray);
                 }
                 else
                 {
-                    creatMap(floorArray,new Vector2(x,y));
+                    creatMap(new Vector2(x,y),floorArray);
                 }
             }
         }
@@ -56,28 +58,57 @@ public class MapManager : MonoBehaviour {
         int minCountWall = 0;
         int minFood = 0;
         int minEnemy = 0;
-        decorateHinder(minCountWall,gameManager.level*2,wallArray);
-        decorateHinder(minFood,gameManager.level,foodArray);
-        decorateHinder(minEnemy,gameManager.level/2,enemyArray);
+        if (level < 3)
+        {
+            int positionIndex = Random.Range(0, 4);
+            creatMap(positionList[positionIndex], exitUI);
+            positionList.RemoveAt(positionIndex);
 
-        GameObject exit = Instantiate(exitUI, new Vector2(cols - 2, rows - 2), Quaternion.identity);
-        exit.transform.SetParent(mapHolder);
+            positionIndex = Random.Range(0, 5);
+            creatMap(positionList[positionIndex], foodArray[1]);
+            positionList.RemoveAt(positionIndex);
+
+            positionIndex = Random.Range(0, 5);
+            creatMap(positionList[positionIndex], wallArray[1]);
+            positionList.RemoveAt(positionIndex);
+
+        }
+        else
+        {
+            decorateExit(exitUI);
+            decorateHinder(minCountWall, level * 9, wallArray);
+            decorateHinder(minFood, level * 5, foodArray);
+            decorateHinder(minEnemy, level * 15, enemyArray);
+        }
     }
 
     private void decorateHinder(int mix,int max,GameObject[] array) {
         int count = Random.Range(mix, max);
         for (int i = 0; i < count; i++) {
             int positionIndex = Random.Range(0, positionList.Count);
-            creatMap(array,positionList[positionIndex]);
+            creatMap(positionList[positionIndex], array);
             positionList.RemoveAt(positionIndex);
         }
     }
 
-    private void creatMap(GameObject[] array, Vector2 pos)
+    private void decorateExit(GameObject exitUI) {
+        int positionIndex = Random.Range(0,positionList.Count);
+        creatMap(positionList[positionIndex],exitUI);
+        positionList.RemoveAt(positionIndex);
+    }
+
+
+    private void creatMap(Vector2 pos, GameObject go)
     {
-            int arrayIndex = Random.Range(0, array.Length);
-            GameObject map = Instantiate(array[arrayIndex],pos, Quaternion.identity);
-            map.transform.SetParent(mapHolder);
+        GameObject map = Instantiate(go, pos, Quaternion.identity);
+        map.transform.SetParent(mapHolder);
+    }
+
+    private void creatMap(Vector2 pos, GameObject[] array )
+    {
+        int arrayIndex = Random.Range(0, array.Length);
+        GameObject map = Instantiate(array[arrayIndex], pos, Quaternion.identity);
+        map.transform.SetParent(mapHolder);
     }
 
 }
